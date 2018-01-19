@@ -17,10 +17,12 @@ working on ubuntu (tested on 16.04)
 - create the user
 - install pm2
 - clone repo and install deps
-- run app with pm2 and add app to startup
+- run app with pm2 and add app to startup 
+
 **vhost.yaml**    
-- add template http
-**sslvhost.yaml**    
+- add template http    
+
+**sslvhost.yaml**       
 - add template http
 - copy ssl key and certificate on host
 
