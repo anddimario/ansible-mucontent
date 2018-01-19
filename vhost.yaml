@@ -1,0 +1,29 @@
+---
+- hosts: mucontent
+  remote_user: root
+
+  vars_prompt:
+    - name: "vhost_name"
+      prompt: "Enter vhost address (example.com)"
+      private: no
+    - name: "mucontent_port"
+      prompt: "Mucontent port (default 3000)"
+      private: no
+      default: 3000
+
+  vars:
+    nginx_path: "/etc/nginx"
+    nginx_sites: "{{ nginx_path }}/sites-available"
+
+  tasks:
+    - name: Setup nginx vhost
+      template:
+        src=templates/vhost.conf.tpl
+        dest="{{ nginx_sites }}/{{ vhost_name }}.conf"
+      notify: restart nginx
+
+  handlers:
+    - name: restart nginx
+      service:
+        name=nginx
+        state=restarted

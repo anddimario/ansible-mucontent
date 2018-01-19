@@ -1,6 +1,8 @@
 - hosts: mucontent
   remote_user: root
 
+  vars:
+    nginx_path: /etc/nginx
   tasks:
     - name: Install required packages
       apt:
@@ -19,6 +21,18 @@
       # Check the built in ansible_dtribution variable
       when: 'ansible_distribution == "Ubuntu"'
 
+    - name: Setup nginx conf
+      template:
+        src=templates/nginx.conf.tpl
+        dest={{ nginx_path }}/nginx.conf
+      notify: restart nginx
+
+    - name: Setup nginx proxy params conf
+      template:
+        src=templates/proxy_params.tpl
+        dest={{ nginx_path }}/proxy_params
+      notify: restart nginx
+
     - name: Create user
       user: 
         name: mucontent
@@ -27,6 +41,7 @@
     - name: Install pm2 
       command: /usr/bin/npm install -g pm2
 
+    # Needs because nodejs version is not installed as node
     - name: Link node to nodejs
       file: 
         src=/usr/bin/nodejs
@@ -61,3 +76,9 @@
 
     - name: Add pm2 to startup
       command: sudo env PATH=$PATH:/usr/bin /usr/local/lib/node_modules/pm2/bin/pm2 startup ubuntu -u mucontent --hp /home/mucontent
+
+  handlers:
+    - name: restart nginx
+      service:
+        name=nginx
+        state=restarted

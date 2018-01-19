@@ -1,0 +1,51 @@
+---
+- hosts: mucontent
+  remote_user: root
+
+  vars_prompt:
+    - name: "vhost_name"
+      prompt: "Enter vhost address (example.com)"
+      private: no
+    - name: "mucontent_port"
+      prompt: "Mucontent port (default 3000)"
+      private: no
+      default: 3000
+    - name: "ssl_key_path"
+      prompt: "SSL key path"
+      private: no
+    - name: "ssl_certificate_path"
+      prompt: "SSL certificate path"
+      private: no
+
+  vars:
+    nginx_path: "/etc/nginx"
+    nginx_sites: "{{ nginx_path }}/sites-available"
+
+  tasks:
+    - name: Setup nginx vhost
+      template:
+        src=templates/vhost-https.conf.tpl
+        dest="{{ nginx_sites }}/{{ vhost_name }}.conf"
+      notify: restart nginx
+
+    - name: Copy ssl key
+      copy:
+        src: "{{ ssl_key_path }}"
+        dest: /etc/ssl/private/{{ vhost_name }}.key
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: Copy ssl cert        
+      copy: 
+        src: "{{ ssl_certificate_path }}"
+        dest: /etc/ssl/certs/{{ vhost_name }}.crt
+        owner: root
+        group: root
+        mode: 0600
+
+  handlers:
+    - name: restart nginx
+      service:
+        name=nginx
+        state=restarted
