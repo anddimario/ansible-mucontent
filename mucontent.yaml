@@ -1,0 +1,63 @@
+- hosts: mucontent
+  remote_user: root
+
+  tasks:
+    - name: Install required packages
+      apt:
+        # This package should be installed
+        state: present
+        name: "{{ item }}"
+        update_cache: yes
+      # Install multiple packages
+      with_items:
+        - 'nginx'
+        - 'mongodb'
+        - 'nodejs'
+        - 'npm'
+        - 'git'
+      #become: true
+      # Check the built in ansible_dtribution variable
+      when: 'ansible_distribution == "Ubuntu"'
+
+    - name: Create user
+      user: 
+        name: mucontent
+        state: present
+
+    - name: Install pm2 
+      command: /usr/bin/npm install -g pm2
+
+    - name: Link node to nodejs
+      file: 
+        src=/usr/bin/nodejs
+        dest=/usr/bin/node
+        state=link
+
+    - name: Clone mucontent
+      become: true
+      become_user: mucontent
+      become_method: sudo
+      git:
+        repo: https://github.com/anddimario/mucontent.git
+        dest: /home/mucontent/mucontent
+
+    - name: Install deps
+      become: true
+      become_user: mucontent
+      become_method: sudo
+      shell:
+        cmd: npm install
+        chdir: /home/mucontent/mucontent
+
+    - name: Start with pm2
+      become: true
+      become_user: mucontent
+      become_method: sudo
+      environment:
+        DATABASE: mongodb://127.0.0.1:27017/mucontent
+      shell:
+        cmd: pm2 start app.js
+        chdir: /home/mucontent/mucontent
+
+    - name: Add pm2 to startup
+      command: sudo env PATH=$PATH:/usr/bin /usr/local/lib/node_modules/pm2/bin/pm2 startup ubuntu -u mucontent --hp /home/mucontent
